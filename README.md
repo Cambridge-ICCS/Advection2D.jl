@@ -39,4 +39,7 @@ $$
 
 Tri numerical methods are implemented on the same number of degree of freedoms, a pure finite volume method, a pure continuous spectral element method and combined method. Since the first two methods can be written in the same flux form they can be combined by a convex combination of both fluxes. The be+lending factor is computed locally for each flux and is determined from the smoothness of the tracer profile,
 
-To run the code the user can choose the domain size (Lx,Ly), the number of grid boxes (Nx,Ny) in the x and y direction and the order n of the element function.
+To run the code the user can choose the domain size (Lx,Ly), the number of grid boxes (Nx,Ny) in the x and y direction and the order n of the element function. Furthermore you have to choose a time dtau step and the number of time steps nIter. All this has to be done at the moment in one of the tri main programs beginning with Test.... The size of the time step is constrained by the CFL number which depends on the maximum size of the given velocity field, the grid size of the macro cell and the order of the polynomial.
+$$
+\frac{\Delta \tau |u|}{\Delta x (n+1)^2} \le 1
+$$ 
