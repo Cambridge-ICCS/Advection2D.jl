@@ -20,6 +20,12 @@ import Pkg; Pkg.add("CairoMakie")
 
 It'll take a few minutes to download and precompile packages.
 
+For CUDA:
+
+```julia
+import Pkg; Pkg.add("CUDA")
+```
+
 ## Background
 This code is intended to develop positivity preserving advection schemes.
 Therefore the data structure resembles what we have normally in a spectral element code. The simulation domain is divided in a number of macro conforming quadrilateral elements. Inside each element you have a number of degrees of freedom. For two-dimensional quadrilaterals a tensor product ansatz of one dimensional Lagrange function is used defined on the
