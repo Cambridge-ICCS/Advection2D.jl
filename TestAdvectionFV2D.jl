@@ -1,12 +1,14 @@
 using LinearAlgebra
 using CairoMakie
 using Test
+using CUDA
 include("GaussLobattoQuad.jl")
 include("Lagrange.jl")
 include("DLagrange.jl")
 include("Jacobi2D.jl")
 include("Initial2D.jl")
 include("AdvectionFV2D.jl")
+include("AdvectionFV2DCuda.jl")
 include("Visualization.jl")
 include("DSS.jl")
 include("Flux.jl")
@@ -111,7 +113,7 @@ function TestAdvectionFV2D()
 
   nIter = 200
   dtau = 0.25
-  IterLoopCuda!(nIter, dtau, d_cFn, dXdxI, J ,wF, uF, vF, fF)
+  IterLoopCuda!(nIter, dtau, d_cFn, dXdxI, J ,wF, uF, vF)
   Plot2DC(d_cFn,IntF2EC,"ScalarEndeFV_GPU")
 
   cpuRun = true
@@ -145,23 +147,48 @@ function IterLoop!(nIter, dtau, cFn, dXdxI, J, wF, uF, vF, fF)
   @. cFn = cFnNew
 end
 
-function IterLoopCuda!(nIter, dtau, cFn, dXdxI, J, wF, uF, vF, fF)
+function IterLoopCuda!(nIter, dtau, cFn, dXdxI, J, wF, uF, vF)
   n  = size(cFn, 1) - 1
   Nx = size(cFn, 3)
   Ny = size(cFn, 4)
 
-  cFnNew = zeros(n+1,n+1,Nx,Ny)
-  fF     = zeros(n+1,n+1,Nx,Ny)
+  # note: wasteful zeroing out.
+  # should use something like CuArray{Type}(undef, size)
+  d_cFnNew = CUDA.zeros(n+1,n+1,Nx,Ny)
+  d_cFn    = CUDA.zeros(n+1,n+1,Nx,Ny)
+  copyto!(d_cFn, cFn)
+  d_fF     = CUDA.zeros(n+1,n+1,Nx,Ny)
 
-  @. cFnNew = cFn
+  d_dXdxI = CUDA.zeros(size(dXdxI))
+  copyto!(d_dXdxI, dXdxI)
+
+  d_J = CUDA.zeros(size(J))
+  copyto!(d_J, J)
+
+  d_uF = CUDA.zeros(size(uF))
+  copyto!(d_uF, uF)
+
+  d_vF = CUDA.zeros(size(vF))
+  copyto!(d_vF, vF)
+
+  d_wF = CUDA.zeros(size(wF))
+  copyto!(d_wF, wF)
+
+  d_uC = CUDA.zeros(n+1,n+1)
+  d_vC = CUDA.zeros(n+1,n+1)
+
   @time for iTer = 1 : nIter
-    @. cFn = cFnNew
-    AdvectionFV2D!(fF,cFnNew,uF,vF,dXdxI,J,wF)
-    @. cFnNew = cFn + 1/3 * dtau * fF
-    AdvectionFV2D!(fF,cFnNew,uF,vF,dXdxI,J,wF)
-    @. cFnNew = cFn + 1/2 * dtau * fF
-    AdvectionFV2D!(fF,cFnNew,uF,vF,dXdxI,J,wF)
-    @. cFnNew = cFn +       dtau * fF
+    @. d_cFn = d_cFnNew
+    CUDA.@cuda AdvectionFV2DCudaKernel!(d_fF, d_cFnNew, d_uF, d_vF, d_dXdxI, d_J, d_wF, d_uC, d_vC)
+    #CUDA.@cuda DSS TODO
+    d_cFnNew = d_cFn .+ 1/3 .* dtau .* d_fF
+    CUDA.@cuda AdvectionFV2DCudaKernel!(d_fF, d_cFnNew, d_uF, d_vF, d_dXdxI, d_J, d_wF, d_uC, d_vC)
+    #CUDA.@cuda DSS TODO
+    d_cFnNew = d_cFn .+ 1/2 .* dtau .* d_fF
+    CUDA.@cuda AdvectionFV2DCudaKernel!(d_fF, d_cFnNew, d_uF, d_vF, d_dXdxI, d_J, d_wF, d_uC, d_vC)
+    #CUDA.@cuda DSS TODO
+    d_cFnNew = d_cFn .+        dtau .* d_fF
   end
-  @. cFn = cFnNew
+  @. d_cFn = d_cFnNew
+  copyto!(cFn, d_cFn)
 end
