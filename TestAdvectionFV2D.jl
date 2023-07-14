@@ -106,7 +106,7 @@ function TestAdvectionFV2D()
   cFFV = zeros(n+1,n+1,Nx,Ny)
   fF = zeros(n+1,n+1,Nx,Ny)
   @. cFFV = cF0
-  for iTer = 1 : nIter
+  @time for iTer = 1 : nIter
     @. cFn = cFFV
     AdvectionFV2D!(fF,cFFV,uF,vF,dXdxI,J,wF)
     @. cFFV = cFn + 1/3 * dtau * fF
