@@ -1,5 +1,4 @@
 # Advection2D.jl
-
 Solves the two-dimensional advection equation in a Cartesian domain.
 
 $$
@@ -8,7 +7,20 @@ $$
 
 where $(u,v)$ is a given velocity field.
 
+## Usage
+You need Julia -- consider
+[juliaup](https://github.com/JuliaLang/juliaup#mac-and-linux) for installing.
 
+Install dependencies by running `julia` in the repository root and entering the
+following code in the REPL:
+
+```julia
+import Pkg; Pkg.add("CairoMakie")
+```
+
+It'll take a few minutes to download and precompile packages.
+
+## Background
 This code is intended to develop positivity preserving advection schemes.
 Therefore the data structure resembles what we have normally in a spectral element code. The simulation domain is divided in a number of macro conforming quadrilateral elements. Inside each element you have a number of degrees of freedom. For two-dimensional quadrilaterals a tensor product ansatz of one dimensional Lagrange function is used defined on the
 interval $[-1,1]$.
