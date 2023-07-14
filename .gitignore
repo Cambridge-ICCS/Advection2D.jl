@@ -1,0 +1,5 @@
+# (Vim) swap files
+.*.swp
+
+# Mac filesystem cruft
+.DS_Store
